@@ -22,7 +22,7 @@ This application provides a robust platform for managing tasks and tickets, feat
 - **Framework**: Express.js
 - **Database**: MongoDB (Mongoose ODM)
 - **Authentication**: Firebase Admin SDK
-- **Validation**: Zod (implied usage in modern apps)
+- **Validation**: Custom hook (RBAC)
 
 ### Infrastructure
 - **Containerization**: Docker, Docker Compose
