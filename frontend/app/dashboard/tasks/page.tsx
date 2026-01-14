@@ -190,7 +190,7 @@ export default function TasksPage() {
       <div className="grid gap-4">
         {filteredTasks.length === 0 ? (
           <div className="text-center text-muted-foreground pt-100">
-            No tasks found.
+            No task found.
           </div>
         ) : (
           filteredTasks.map((task) => (
