@@ -14,7 +14,7 @@ This application provides a robust platform for managing tasks and tickets, feat
 - **Styling**: Tailwind CSS, Lucide React (Icons)
 - **UI Components**: Shadcn UI (Radix Primitives)
 - **State Management**: React Context (Auth)
-- **Data Fetching**: Axios, SWR, Custom Hooks
+- **Data Fetching**: Axios, Custom Hooks
 - **Drag & Drop**: @dnd-kit
 
 ### Backend
