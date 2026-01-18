@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
+import { SocketProvider } from "@/components/providers/SocketProvider";
 
 export default function DashboardLayout({ children }: any) {
   const { user, loading } = useAuth();
@@ -36,14 +37,16 @@ export default function DashboardLayout({ children }: any) {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Navbar />
-        <main className="flex-1 overflow-y-auto p-4">
-          {children}
-        </main>
+    <SocketProvider>
+      <div className="flex h-screen">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <Navbar />
+          <main className="flex-1 overflow-y-auto p-4">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </SocketProvider>
   );
 }

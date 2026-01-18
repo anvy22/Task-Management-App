@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import api from "@/lib/api";
+import { useState } from "react";
 import Board from "@/components/kanban/Board";
 import { Ticket } from "@/types/ticket";
 import { useAuth } from "@/context/AuthContext";
@@ -16,14 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
+import { useSocket } from "@/components/providers/SocketProvider";
 
 export default function DashboardPage() {
-  const [isPollingPaused, setIsPollingPaused] = useState(false);
   const { user, ready } = useAuth();
-
-  const { tickets, isLoading, mutate } = useTickets({
-    refreshInterval: isPollingPaused ? 0 : 3000
-  });
+  const { tickets, isLoading, refresh } = useTickets();
+  const { isConnected } = useSocket();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
@@ -46,15 +43,6 @@ export default function DashboardPage() {
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
 
-  const handleSetTickets: React.Dispatch<React.SetStateAction<Ticket[]>> = (action) => {
-    mutate((prev) => {
-      const newData = typeof action === 'function' ? action(prev || []) : action;
-      return newData;
-    }, false);
-  };
-
-  // No need for early return - parent layout handles auth
-  // Just show loading state while data is being fetched
   if (!ready || !user) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -63,7 +51,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Show loading during initial fetch if no data
   if (isLoading && tickets.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -74,12 +61,18 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-4">
+      {/* Connection status indicator */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+        {isConnected ? 'Realtime connected' : 'Connecting...'}
+      </div>
+
       {user.role === "admin" && (
         <CreateTicketModal
-          onCreated={(t: Ticket) =>
-            // Optimistically update or revalidate
-            mutate((prev) => [...(prev || []), t])
-          }
+          onCreated={(t: Ticket) => {
+            // The socket will handle adding the ticket, but we can refresh just in case
+            refresh();
+          }}
         />
       )}
 
@@ -107,8 +100,8 @@ export default function DashboardPage() {
 
       <Board
         tickets={filteredTickets}
-        setTickets={handleSetTickets}
-        onPendingStateChange={setIsPollingPaused}
+        setTickets={() => { }} // Socket handles updates
+        onPendingStateChange={() => { }} // No longer needed
       />
     </div>
   );

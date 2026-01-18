@@ -15,7 +15,7 @@ interface UserRequest extends Request {
 
 export const getUsers = async (_req: Request, res: Response) => {
        try {
-              const users = await User.find().select(" _id name email role");
+              const users = await User.find().select("_id name email role firebaseUid");
               res.json(users);
        } catch (error) {
               res.status(500).json("Failed to fetch users");
@@ -91,7 +91,7 @@ export const getAssignedTicketsDetails = async (
 ) => {
        try {
               const { userId } = req.query;
-              
+
 
               let targetUserId = userId;
 
@@ -116,7 +116,7 @@ export const getAssignedTicketsDetails = async (
                      .select("_id title status priority deadline createdAt updatedAt")
                      .sort({ createdAt: -1 });
 
-              
+
               if (tickets.length === 0) {
                      return res.status(200).json([]);
               }

@@ -15,6 +15,11 @@ const commentSchema = new Schema({
         type: String,
         required: true,
     },
+    replyTo: {
+        type: Types.ObjectId,
+        ref: "Comment",
+        default: null,
+    },
 },
     { timestamps: true },
 

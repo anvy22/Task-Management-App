@@ -1,27 +1,22 @@
 "use client";
 
-import useSWR, { SWRConfiguration } from "swr";
+import { useSocket, Comment } from "@/components/providers/SocketProvider";
+import { useEffect } from "react";
 
-export type Comment = {
-    _id: string;
-    content: string;
-    author: {
-        _id: string;
-        name: string;
-    };
-    createdAt: string;
-};
+export type { Comment };
 
-export function useComments(ticketId: string, config?: SWRConfiguration) {
-    const { data, error, isLoading, mutate } = useSWR<Comment[]>(
-        ticketId ? `/tickets/${ticketId}/comments` : null,
-        config
-    );
+export function useComments(ticketId: string) {
+    const { comments, commentsLoading, fetchComments } = useSocket();
+
+    useEffect(() => {
+        if (ticketId) {
+            fetchComments(ticketId);
+        }
+    }, [ticketId, fetchComments]);
 
     return {
-        comments: data || [],
-        isLoading,
-        isError: error,
-        mutate,
+        comments: comments.get(ticketId) || [],
+        isLoading: commentsLoading.get(ticketId) || false,
+        refresh: () => fetchComments(ticketId),
     };
 }

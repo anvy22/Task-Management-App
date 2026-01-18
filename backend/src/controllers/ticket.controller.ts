@@ -7,7 +7,8 @@ import {
   updateTicketStatusService,
   reviewTicketService,
 } from "../services/ticket.service";
-
+import { emitToUser } from "../services/socketEvents";
+import { createNotification } from "../services/notification.service";
 
 export const createTicket = async (req: any, res: Response) => {
   const ticket = await createTicketService(req.body, req.dbUser._id);
@@ -89,12 +90,30 @@ export const deleteTicket = async (req: any, res: Response) => {
   const ticket = await Ticket.findById(req.params.id);
   if (!ticket) return res.status(404).json({ message: "Ticket not found" });
 
+  const ticketTitle = ticket.title;
 
   await Activity.deleteMany({ ticketId: req.params.id });
   await Comment.deleteMany({ ticketId: req.params.id });
 
-
   await Ticket.findByIdAndDelete(req.params.id);
+
+  await ticket.populate("assignedTo", "firebaseUid");
+
+  if (ticket.assignedTo) {
+    const assignee = ticket.assignedTo as any;
+    emitToUser(assignee.firebaseUid, "ticket:deleted", ticket);
+
+    // Notify assignee that their ticket was deleted
+    await createNotification({
+      recipientId: assignee._id.toString(),
+      recipientFirebaseUid: assignee.firebaseUid,
+      type: "ticket:deleted",
+      title: "Ticket Deleted",
+      message: `Ticket "${ticketTitle}" has been deleted`,
+      refType: "ticket",
+      actorId: req.dbUser._id,
+    });
+  }
 
   res.json({ message: "Ticket deleted successfully" });
 };

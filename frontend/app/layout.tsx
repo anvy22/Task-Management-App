@@ -2,7 +2,6 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { SWRProvider } from "@/components/providers/swr-provider";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -22,13 +21,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <SWRProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </SWRProvider>
+          <AuthProvider>{children}</AuthProvider>
           <Toaster position="bottom-right" richColors />
         </ThemeProvider>
       </body>
     </html>
   );
 }
-

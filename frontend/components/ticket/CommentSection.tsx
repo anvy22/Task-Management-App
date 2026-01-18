@@ -7,15 +7,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageSquare, Send, User } from "lucide-react";
+import { MessageSquare, Send, User, Reply } from "lucide-react";
 import { toast } from "sonner";
-import { useComments } from "@/hooks/useComments";
+import { useComments, Comment } from "@/hooks/useComments";
 
 export default function CommentSection({ ticketId }: { ticketId: string }) {
     const { user } = useAuth();
-    const { comments, isLoading, mutate } = useComments(ticketId);
+    const { comments, isLoading, refresh } = useComments(ticketId);
     const [newComment, setNewComment] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [replyTo, setReplyTo] = useState<Comment | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const isInitialLoad = useRef(true);
 
@@ -39,14 +40,19 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
         try {
             await api.post(`/tickets/${ticketId}/comments`, {
                 content: newComment,
+                replyTo: replyTo?._id || null,
             });
             setNewComment("");
-            await mutate(); // Refresh comments
+            setReplyTo(null);
+            // Socket will handle adding the comment, but refresh as fallback
+            refresh();
             toast.success("Comment posted");
             // Scroll to bottom after adding
-            if (scrollRef.current) {
-                scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-            }
+            setTimeout(() => {
+                if (scrollRef.current) {
+                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                }
+            }, 100);
         } catch (err) {
             console.error("Failed to add comment", err);
             toast.error("Failed to post comment");
@@ -105,7 +111,22 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
                                         <span className="text-xs text-muted-foreground">
                                             {formatTime(comment.createdAt)}
                                         </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={() => setReplyTo(comment)}
+                                        >
+                                            <Reply className="w-3 h-3 mr-1" />
+                                            Reply
+                                        </Button>
                                     </div>
+                                    {comment.replyTo && (
+                                        <div className="text-xs text-muted-foreground bg-muted/60 p-2 rounded-lg mb-2 border-l-2 border-primary/30">
+                                            <span className="font-medium">Replying to {comment.replyTo.author?.name || 'Unknown'}: </span>
+                                            {comment.replyTo.content?.substring(0, 50)}...
+                                        </div>
+                                    )}
                                     <div className="text-sm text-foreground/90 leading-relaxed bg-muted/40 p-3.5 rounded-2xl rounded-tl-sm border border-border/40 shadow-sm">
                                         {comment.content}
                                     </div>
@@ -115,7 +136,24 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
                     )}
                 </div>
 
-                {/* Improved Input Area */}
+                {/* Reply indicator */}
+                {replyTo && (
+                    <div className="flex items-center gap-2 px-2 py-1 bg-muted/50 rounded-lg text-sm">
+                        <Reply className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Replying to</span>
+                        <span className="font-medium">{replyTo.author.name}</span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 ml-auto"
+                            onClick={() => setReplyTo(null)}
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                )}
+
+                {/* Input Area */}
                 <div className="mt-4 pt-4 border-t bg-background/50 backdrop-blur-sm">
                     <form onSubmit={handleSubmit} className="relative flex gap-3 items-end">
                         <Avatar className="w-8 h-8 shrink-0 hidden sm:block">
@@ -127,7 +165,7 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
                             <Textarea
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
-                                placeholder="Write a comment..."
+                                placeholder={replyTo ? `Reply to ${replyTo.author.name}...` : "Write a comment..."}
                                 className="min-h-[44px] max-h-[150px] py-3 pr-12 resize-none bg-muted/30 focus:bg-background focus:ring-2 focus:ring-primary/10 transition-all rounded-2xl border-transparent focus:border-border shadow-sm"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.shiftKey) {

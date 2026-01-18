@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { useSocket } from "@/components/providers/SocketProvider"
 
 
 
@@ -33,11 +34,13 @@ export interface User {
   name: string,
   email: string,
   role: string,
+  firebaseUid: string,
 }
 
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const { onlineUsers } = useSocket();
 
   const router = useRouter();
 
@@ -59,10 +62,20 @@ export default function Users() {
       setLoading(false);
     }
   }
+
+  const isUserOnline = (firebaseUid: string) => {
+    return onlineUsers.includes(firebaseUid);
+  };
+
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Users</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Users
+          <span className="text-sm font-normal text-muted-foreground">
+            ({onlineUsers.length} online)
+          </span>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-full rounded-md border">
@@ -81,6 +94,7 @@ export default function Users() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Role</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -91,12 +105,21 @@ export default function Users() {
                       <TableRow key={user._id} className="cursor-pointer hover:bg-muted/50 transition"
                         onClick={() => router.push(`/dashboard/users/${user._id}`)}>
 
-                        <TableCell className="flex items-center gap-5">
-                          <Avatar>
-                            <AvatarFallback>
-                              {user.name.charAt(0).toLocaleUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
+                        <TableCell className="flex items-center gap-3">
+                          <div className="relative">
+                            <Avatar>
+                              <AvatarFallback>
+                                {user.name.charAt(0).toLocaleUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span
+                              className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background ${isUserOnline(user.firebaseUid)
+                                  ? "bg-green-500"
+                                  : "bg-gray-400"
+                                }`}
+                              title={isUserOnline(user.firebaseUid) ? "Online" : "Offline"}
+                            />
+                          </div>
                           <span className="font-medium ">
                             {user.name}
                           </span>
@@ -104,6 +127,15 @@ export default function Users() {
 
                         <TableCell className="text-muted-foreground">
                           {user.email}
+                        </TableCell>
+
+                        <TableCell>
+                          <Badge
+                            variant={isUserOnline(user.firebaseUid) ? "default" : "outline"}
+                            className={isUserOnline(user.firebaseUid) ? "bg-green-500 hover:bg-green-600" : ""}
+                          >
+                            {isUserOnline(user.firebaseUid) ? "Online" : "Offline"}
+                          </Badge>
                         </TableCell>
 
                         <TableCell>

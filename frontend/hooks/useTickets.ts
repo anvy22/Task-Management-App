@@ -1,19 +1,13 @@
 "use client";
 
-import useSWR from "swr";
-import { Ticket } from "@/types/ticket";
+import { useSocket } from "@/components/providers/SocketProvider";
 
-import { SWRConfiguration } from "swr";
-
-export function useTickets(config?: SWRConfiguration) {
-    const { data, error, isLoading, mutate } = useSWR<Ticket[]>("/tickets", {
-        ...config
-    });
+export function useTickets() {
+    const { tickets, ticketsLoading, refreshTickets } = useSocket();
 
     return {
-        tickets: data || [],
-        isLoading,
-        isError: error,
-        mutate,
+        tickets,
+        isLoading: ticketsLoading,
+        refresh: refreshTickets,
     };
 }
