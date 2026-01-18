@@ -159,6 +159,32 @@ If you prefer to run the services locally on your machine.
    ```
    App will run on `http://localhost:3000`.
 
+## 🔌 Socket.IO Integration
+
+The application uses Socket.IO for real-time updates. Implemented features include live notifications, ticket updates, and comment feeds.
+
+### Authentication
+
+To connect to the socket server, you must provide a valid Firebase ID Token. You can pass it in two ways during the connection handshake:
+
+1.  **Auth Object**: `{ token: "YOUR_FIREBASE_ID_TOKEN" }`
+2.  **Authorization Header**: `Authorization: Bearer YOUR_FIREBASE_ID_TOKEN`
+
+### Server-to-Client Events
+
+The server emits the following events to targeted users. Since the app uses authenticated sockets, events are only sent to the relevant users (e.g., assignee, ticket creator).
+
+| Event Name | Payload Description | Trigger |
+| :--- | :--- | :--- |
+| `notification:new` | Notification Object | When a notification is created for the user. |
+| `ticket:created` | Ticket Object | When a ticket is assigned to the user. |
+| `ticket:updated` | Ticket Object | When a ticket status changes. |
+| `ticket:reviewed` | Ticket Object | When a ticket is reviewed by an admin. |
+| `comment:added` | `{ ticketId, comment }` | When a comment is added to a relevant ticket. |
+| `comment:replied` | `{ ticketId, comment, originalComment }` | When someone replies to the user's comment. |
+| `comment:deleted` | `{ ticketId, commentId }` | When a comment is deleted. |
+
+
 ## 📁 Project Structure
 
 ```
