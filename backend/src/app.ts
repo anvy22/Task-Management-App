@@ -13,7 +13,7 @@ import type { Request, Response } from "express";
 
 const app = express();
 app.use(cors());
-app.set("trust proxy", true);
+app.set("trust proxy", true);  
 
 
 const logsDir = path.join(process.cwd(),"src","logs");
