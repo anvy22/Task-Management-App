@@ -32,7 +32,13 @@ export default function Board({
   setTickets: React.Dispatch<React.SetStateAction<Ticket[]>>;
   onPendingStateChange?: (isPending: boolean) => void;
 }) {
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px of movement before drag starts
+      },
+    })
+  );
   const { user } = useAuth();
   // Track timeouts per ticket to allow independent cancellations
   const timeoutsRef = useRef<Record<string, NodeJS.Timeout>>({});

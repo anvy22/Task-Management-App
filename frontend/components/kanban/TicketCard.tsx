@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ const getStatusColor = (ticket: Ticket) => {
 
 export default function TicketCard({ ticket }: { ticket: Ticket }) {
   const router = useRouter();
-  const isDraggingRef = useRef(false);
+  const wasDraggingRef = useRef(false);
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: ticket._id,
@@ -35,23 +35,19 @@ export default function TicketCard({ ticket }: { ticket: Ticket }) {
   const isPendingReview = ticket.status === "done" && !ticket.isReviewed;
   const isCompleted = ticket.status === "done" && ticket.isReviewed;
 
-  // Track when dragging starts
-  const handlePointerDown = () => {
-    isDraggingRef.current = false;
-  };
-
-  // Detect if this was actually a drag
-  const handlePointerMove = () => {
-    if (!isDraggingRef.current) {
-      isDraggingRef.current = true;
+  // Track if dragging occurred
+  useEffect(() => {
+    if (isDragging) {
+      wasDraggingRef.current = true;
     }
-  };
+  }, [isDragging]);
 
   // Only navigate if it wasn't a drag
   const handleClick = (e: React.MouseEvent) => {
-    if (isDraggingRef.current) {
+    // If we were just dragging, prevent navigation
+    if (wasDraggingRef.current) {
       e.preventDefault();
-      isDraggingRef.current = false;
+      wasDraggingRef.current = false;
       return;
     }
     router.push(`/dashboard/ticket/${ticket._id}`);
@@ -64,8 +60,6 @@ export default function TicketCard({ ticket }: { ticket: Ticket }) {
       {...listeners}
       {...attributes}
       className={clsx(isDragging && "opacity-50")}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
     >
       <Card
         onClick={handleClick}
