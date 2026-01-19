@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useRef } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,8 @@ const getStatusColor = (ticket: Ticket) => {
 };
 
 export default function TicketCard({ ticket }: { ticket: Ticket }) {
+  const router = useRouter();
+  const isDraggingRef = useRef(false);
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: ticket._id,
@@ -32,6 +35,28 @@ export default function TicketCard({ ticket }: { ticket: Ticket }) {
   const isPendingReview = ticket.status === "done" && !ticket.isReviewed;
   const isCompleted = ticket.status === "done" && ticket.isReviewed;
 
+  // Track when dragging starts
+  const handlePointerDown = () => {
+    isDraggingRef.current = false;
+  };
+
+  // Detect if this was actually a drag
+  const handlePointerMove = () => {
+    if (!isDraggingRef.current) {
+      isDraggingRef.current = true;
+    }
+  };
+
+  // Only navigate if it wasn't a drag
+  const handleClick = (e: React.MouseEvent) => {
+    if (isDraggingRef.current) {
+      e.preventDefault();
+      isDraggingRef.current = false;
+      return;
+    }
+    router.push(`/dashboard/ticket/${ticket._id}`);
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -39,46 +64,47 @@ export default function TicketCard({ ticket }: { ticket: Ticket }) {
       {...listeners}
       {...attributes}
       className={clsx(isDragging && "opacity-50")}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
     >
-      <Link href={`/dashboard/ticket/${ticket._id}`}>
-        <Card
-          className={clsx(
-            "mb-3 cursor-pointer border-l-4 hover:shadow-md transition-shadow",
-            getStatusColor(ticket)
-          )}
-        >
-          <CardContent className="p-3 space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="font-medium flex-1">{ticket.title}</div>
-              {isPendingReview && (
-                <Badge
-                  variant="outline"
-                  className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-xs shrink-0"
-                >
-                  <Clock className="w-3 h-3 mr-1" />
-                  Review
-                </Badge>
-              )}
-              {isCompleted && (
-                <Badge
-                  variant="outline"
-                  className="bg-green-500/10 text-green-600 border-green-500/30 text-xs shrink-0"
-                >
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Done
-                </Badge>
-              )}
-            </div>
+      <Card
+        onClick={handleClick}
+        className={clsx(
+          "mb-3 cursor-pointer border-l-4 hover:shadow-md transition-shadow",
+          getStatusColor(ticket)
+        )}
+      >
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="font-medium flex-1">{ticket.title}</div>
+            {isPendingReview && (
+              <Badge
+                variant="outline"
+                className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-xs shrink-0"
+              >
+                <Clock className="w-3 h-3 mr-1" />
+                Review
+              </Badge>
+            )}
+            {isCompleted && (
+              <Badge
+                variant="outline"
+                className="bg-green-500/10 text-green-600 border-green-500/30 text-xs shrink-0"
+              >
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Done
+              </Badge>
+            )}
+          </div>
 
-            <div className="flex items-center justify-between">
-              <Badge variant="secondary">{ticket.priority}</Badge>
-              <span className="text-xs text-muted-foreground">
-                {ticket.assignedTo.name}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
+          <div className="flex items-center justify-between">
+            <Badge variant="secondary">{ticket.priority}</Badge>
+            <span className="text-xs text-muted-foreground">
+              {ticket.assignedTo.name}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
