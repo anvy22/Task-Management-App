@@ -91,6 +91,7 @@ export const deleteTicket = async (req: any, res: Response) => {
   if (!ticket) return res.status(404).json({ message: "Ticket not found" });
 
   const ticketTitle = ticket.title;
+  const ticketId = ticket._id.toString();
 
   await Activity.deleteMany({ ticketId: req.params.id });
   await Comment.deleteMany({ ticketId: req.params.id });
@@ -101,7 +102,7 @@ export const deleteTicket = async (req: any, res: Response) => {
 
   if (ticket.assignedTo) {
     const assignee = ticket.assignedTo as any;
-    emitToUser(assignee.firebaseUid, "ticket:deleted", ticket);
+    emitToUser(assignee.firebaseUid, "ticket:deleted", { ticketId });
 
     // Notify assignee that their ticket was deleted
     await createNotification({
